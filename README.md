@@ -78,8 +78,9 @@ This container has no `cron` or systemd (PID 1 is the agent), so the runtime is 
 by a self-healing wrapper: `bash scripts/keeper.sh` runs `strategy_runtime.py run --yes`
 in a loop, restarting it on any crash/exit with a 30-second backoff, logging to
 `run_data/runtime_keeper.log`. Stop it cleanly: `touch run_data/keeper.stop` (or kill the
-keeper PID; it was launched with `setsid nohup bash scripts/keeper.sh >/dev/null 2>&1 &`
-so it survives the terminal session.
+keeper PID; it was launched with `python3 scripts/daemonize_keeper.py` (double-fork +
+setsid; PID in `run_data/keeper.pid`), so it survives the session and the sandbox
+reaping background children of finished commands.
 
 On a real host the same loop can be scheduled via cron, e.g. in crontab:
 `*/5 * * * * pgrep -f "strategy_runtime.py run" || cd /path/to/project && bash scripts/keeper.sh`.
