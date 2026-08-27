@@ -1,0 +1,7 @@
+.env
+bin/
+alpaca-skills/
+*.log
+run_data/
+__pycache__/
+.venv/

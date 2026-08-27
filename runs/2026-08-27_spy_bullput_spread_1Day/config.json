@@ -1,0 +1,18 @@
+{
+  "initial_cash": 100000,
+  "risk_per_trade_pct": 0.10,
+  "data": {
+    "symbol": "SPY",
+    "feed": "iex",
+    "adjustment": "raw",
+    "start": "2020-07-27",
+    "end": "2026-08-26",
+    "timeframe": "1Day"
+  },
+  "fees": {
+    "model": "none",
+    "note": "Paper trading account does not charge commissions; live Alpaca options commissions at ~$0 premium floor are documented as excluded. See fee_source.json."
+  },
+  "friction_bps": 100,
+  "benchmark": "SPY buy-and-hold"
+}

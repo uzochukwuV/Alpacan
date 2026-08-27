@@ -1,0 +1,68 @@
+{
+  "strategy": "spy_bull_put_credit_spread",
+  "initial_cash": 100000.0,
+  "window": {
+    "start": "2020-07-27",
+    "end": "2026-08-27"
+  },
+  "metrics": {
+    "total_return": 0.566,
+    "ann_return": 0.0767,
+    "max_drawdown": -0.0385,
+    "sharpe": 2.961,
+    "final_equity": 156601.37
+  },
+  "benchmark_metrics": {
+    "total_return": 1.3807,
+    "ann_return": 0.1536,
+    "max_drawdown": -0.2538,
+    "sharpe": 0.9457,
+    "final_equity": 238074.6149
+  },
+  "trades": 117,
+  "wins": 106,
+  "losses": 11,
+  "win_rate": 0.906,
+  "profit_factor": 2.7143,
+  "gross_profit": 29641.54,
+  "gross_loss": 10920.37,
+  "first_trade": {
+    "open_date": "2020-12-16",
+    "close_date": "2020-12-29",
+    "exp_date": "2021-01-14",
+    "short_symbol": "SPY210114P00351000",
+    "long_symbol": "SPY210114P00325000",
+    "spot_entry": 369.84,
+    "spot_exit": 373.77,
+    "contracts": 3,
+    "net_credit_per_contract": 0.7,
+    "max_risk_per_contract": 25.3,
+    "realized_pnl": 183.66,
+    "close_reason": "take_profit",
+    "dte_at_close": 16
+  },
+  "last_trade": {
+    "open_date": "2026-08-27",
+    "close_date": "2026-08-27",
+    "exp_date": "2026-09-25",
+    "short_symbol": "SPY260925P00728000",
+    "long_symbol": "SPY260925P00674000",
+    "spot_entry": 768.49,
+    "spot_exit": 769.6,
+    "contracts": 2,
+    "net_credit_per_contract": 1.32,
+    "max_risk_per_contract": 52.68,
+    "realized_pnl": 13.67,
+    "close_reason": "end_of_window",
+    "dte_at_close": 29
+  },
+  "warnings": [
+    "2022-01-20: underlying 451.83 < short strike 453; forced close.",
+    "2022-02-23: underlying 429.58 < short strike 434; forced close.",
+    "2022-08-31: underlying 398.17 < short strike 399; forced close.",
+    "2022-09-19: underlying 385.58 < short strike 386; forced close.",
+    "2022-12-20: underlying 380.00 < short strike 382; forced close.",
+    "2025-03-05: underlying 576.88 < short strike 582; forced close.",
+    "Position still open at end of window; marked at last close 769.60."
+  ]
+}

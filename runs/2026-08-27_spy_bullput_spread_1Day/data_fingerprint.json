@@ -1,0 +1,14 @@
+{
+  "feed": "iex",
+  "adjustment": "raw",
+  "raw_files": [
+    "raw/bars_SPY.json",
+    "raw/calendar.json"
+  ],
+  "bars_sha256": "baa40f9995f245e438b028efcaa7f2458d1f6e515a3a1e5cd1cd524e7b58faa2",
+  "bars_count": 1530,
+  "window": {
+    "start": "2020-07-27",
+    "end": "2026-08-27"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "spy_bull_put_credit_spread",
+  "version": "1.0.0",
+  "asset_class": "us_option",
+  "underlying": "SPY",
+  "timeframe": "1Day",
+  "entry_rules": {
+    "regime_filter": "SPY close > SMA(100) of daily closes (completed bar)",
+    "signal": "On any trading day whose completed close meets the regime filter and no position is open, open a bull put credit spread at next day open",
+    "contract_legs": [
+      "SELL_TO_OPEN short put at strike round_to_1(spot * 0.95) with expiration ~30 calendar days out",
+      "BUY_TO_OPEN long put at strike round_to_1(spot * 0.88) with same expiration"
+    ],
+    "expiration_selection": "target_dte=30 calendar days; pick the nearest available trading day on/after target_dte using SPY trading calendar"
+  },
+  "exit_rules": {
+    "take_profit": "close spread when modeled mid-market short-put value drops to <= 25% of entry credit (capture >= 75% of max profit)",
+    "time_stop": "close spread when days-to-expiration <= 5",
+    "underlying_breach": "close spread at open if prior close < short strike (intrinsic loss control)",
+    "expire": "if held to expiration and underlying > short strike, spread expires worthless, full credit retained"
+  },
+  "position_sizing": {
+    "method": "fixed_risk",
+    "max_risk_per_trade_pct": 0.10,
+    "contracts": "max(1, floor(equity_mid * 0.10 / (strike_width * 100)))",
+    "max_concurrent_positions": 1
+  },
+  "indicators": {
+    "SMA": {
+      "window": 100,
+      "definition": "simple arithmetic mean of last 100 completed daily closes"
+    }
+  },
+  "fill_model": {
+    "name": "next_open",
+    "description": "Signal determined at bar T close; spread opened at bar T+1 open. Premiums modeled via Black-Scholes at the fill-day open underlying price with fixed calibrated IV + round-trip spread friction. Exits likewise execute at next-day open."
+  },
+  "option_pricing_model": {
+    "model": "Black-Scholes (European)",
+    "rate": 0.04,
+    "dividend_yield_underlying": 0.013,
+    "implied_volatility": 0.15,
+    "friction_bps": 100,
+    "note": "Historical per-contract option bars are not available on this paper data subscription. Premiums are modeled with Black-Scholes calibrated to the live chain (ATM SPY IV ~0.125 on 2026-08-27) with a conservative IV uplift to 0.15 and 100bp round-trip friction. Real fills during paper forward-validation will replace modeled prices."
+  },
+  "benchmark": "SPY buy-and-hold, same data window, buys as much SPY as possible with initial cash at first bar close, holds to end"
+}
