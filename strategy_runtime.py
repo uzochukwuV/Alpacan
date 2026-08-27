@@ -311,8 +311,7 @@ def log_fill(tclient, order, action="order"):
         try:
             fresh = tclient.get_order_by_id(order.id)
             status = fresh.status
-            if str(status) in ("FILLED", "CANCELED", "CANCELED", "EXPIRED", "REJECTED",
-                                 "OrderStatus.FILLED", "OrderStatus.CANCELED", "OrderStatus.EXPIRED").lower() or "filled" in str(status).lower():
+            if str(status).upper() in ("FILLED", "CANCELED", "EXPIRED", "REJECTED", "SUSPENDED"):
                 break
         except Exception:
             break
@@ -346,7 +345,7 @@ def reconcile_executions(tclient):
     if os.path.exists(LOG_FILES["order_log"]):
         with open(LOG_FILES["order_log"]) as f:
             for ln in f:
-                for m in re.finditer(r"SPY\d{15}", ln):
+                for m in re.finditer(r"SPY\d{6}[CP]\d{8}", ln):
                     known.add(m.group(0))
     for p in positions:
         sym = p.symbol
