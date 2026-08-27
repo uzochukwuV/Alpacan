@@ -40,12 +40,12 @@ FRICTION = FRICTION_BPS / 10000.0
 
 # ---------------------------------------------------------------- config
 INITIAL_CASH = 100000.0
-SMA_WINDOW = 100
+SMA_WINDOW = 80
 SHORT_PCT = 0.95              # short put strike at 95% of spot
 LONG_PCT = 0.88               # long put strike at 88% of spot
 TARGET_DTE = 30               # calendar days to expiration
 MAX_DTE_CLOSE = 5             # time stop
-TAKE_PROFIT_RATIO = 0.25      # remaining short premium <= 25% of credit -> close
+TAKE_PROFIT_RATIO = 0.50      # close when remaining short premium <= 50% of credit
 RISK_PER_TRADE_PCT = 0.10
 MAX_POSITIONS = 1
 

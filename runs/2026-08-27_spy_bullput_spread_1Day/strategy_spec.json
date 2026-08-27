@@ -1,11 +1,11 @@
 {
   "name": "spy_bull_put_credit_spread",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "asset_class": "us_option",
   "underlying": "SPY",
   "timeframe": "1Day",
   "entry_rules": {
-    "regime_filter": "SPY close > SMA(100) of daily closes (completed bar)",
+    "regime_filter": "SPY close > SMA(80) of daily closes (completed bar)",
     "signal": "On any trading day whose completed close meets the regime filter and no position is open, open a bull put credit spread at next day open",
     "contract_legs": [
       "SELL_TO_OPEN short put at strike round_to_1(spot * 0.95) with expiration ~30 calendar days out",
@@ -14,7 +14,7 @@
     "expiration_selection": "target_dte=30 calendar days; pick the nearest available trading day on/after target_dte using SPY trading calendar"
   },
   "exit_rules": {
-    "take_profit": "close spread when modeled mid-market short-put value drops to <= 25% of entry credit (capture >= 75% of max profit)",
+    "take_profit": "close spread when modeled mid-market cost-to-close drops to <= 50% of entry credit (capture >= 50% of max profit)",
     "time_stop": "close spread when days-to-expiration <= 5",
     "underlying_breach": "close spread at open if prior close < short strike (intrinsic loss control)",
     "expire": "if held to expiration and underlying > short strike, spread expires worthless, full credit retained"
@@ -27,8 +27,8 @@
   },
   "indicators": {
     "SMA": {
-      "window": 100,
-      "definition": "simple arithmetic mean of last 100 completed daily closes"
+      "window": 80,
+      "definition": "simple arithmetic mean of last 80 completed daily closes"
     }
   },
   "fill_model": {

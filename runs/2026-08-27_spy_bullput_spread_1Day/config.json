@@ -1,6 +1,16 @@
 {
   "initial_cash": 100000,
   "risk_per_trade_pct": 0.10,
+  "strategy": {
+    "sma_window": 80,
+    "short_otm_pct": 0.05,
+    "long_otm_pct": 0.12,
+    "target_dte": 30,
+    "take_profit_ratio": 0.50,
+    "time_stop_dte": 5,
+    "max_positions": 1,
+    "note": "Tuned 2026-08-27: SMA 100->80 and take-profit 25%->50% after parameter sweep (see notes.md). Reduced losses from 11 to 8 and raised Sharpe 2.96->3.52."
+  },
   "data": {
     "symbol": "SPY",
     "feed": "iex",

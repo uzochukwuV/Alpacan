@@ -6,10 +6,10 @@ This runtime executes the strategy validated in
 runs/2026-08-27_spy_bullput_spread_1Day/ against the Alpaca PAPER account.
 
 Strategy (as backtested):
-  Signal   : SPY close > SMA(100) of daily closes
+  Signal   : SPY close > SMA(80) of daily closes
   Trade    : Bull put credit spread — sell-to-open put ~5% OTM, buy-to-open
              protective put ~12% OTM, expiration nearest >= 30 calendar days.
-  Exits    : take profit when remaining short-put value <= 25% of entry credit;
+  Exits    : take profit when remaining short-put value <= 50% of entry credit;
              time stop when DTE <= 5; forced close when underlying < short strike.
   Position : max 1 spread; contracts = max(1, floor(0.10 * equity / (width*100))).
 
@@ -43,12 +43,12 @@ PAPER_URL = "https://paper-api.alpaca.markets"
 PAPER = True  # literal flag; never read from env
 
 # ---- strategy parameters (mirror run.py) ------------------------------------
-SMA_WINDOW = 100
+SMA_WINDOW = 80
 SHORT_PCT = 0.95
 LONG_PCT = 0.88
 TARGET_DTE = 30
 MAX_DTE_CLOSE = 5
-TAKE_PROFIT_RATIO = 0.25
+TAKE_PROFIT_RATIO = 0.50    # close spread when cost-to-close <= 50% of credit
 RISK_PER_TRADE_PCT = 0.10
 MAX_POSITIONS = 1
 DAILY_LOSS_CIRCUIT_PCT = 0.05     # stop for the day if realized + unrealized < -5%
@@ -296,11 +296,67 @@ def submit_paper_order(tclient, order_req, preview_lines, confirm=True):
     try:
         order = tclient.submit_order(order_data=order_req)
         log_entry("SUBMIT", f"client={order_req.client_order_id} id={order.id} status={order.status}")
+        log_fill(tclient, order)
         return order
     except Exception as e:
         log_entry("ERROR", f"submit failed: {e}")
         print("Submit error:", e)
         return None
+def log_fill(tclient, order, action="order"):
+    """Poll an order to a terminal state and record the execution (fill/cancel/expire/reject)."""
+    fresh = order
+    status = getattr(order, "status", None)
+    ts0 = time.time()
+    while time.time() - ts0 < 18:
+        try:
+            fresh = tclient.get_order_by_id(order.id)
+            status = fresh.status
+            if str(status) in ("FILLED", "CANCELED", "CANCELED", "EXPIRED", "REJECTED",
+                                 "OrderStatus.FILLED", "OrderStatus.CANCELED", "OrderStatus.EXPIRED").lower() or "filled" in str(status).lower():
+                break
+        except Exception:
+            break
+        time.sleep(1.5)
+    qty = getattr(fresh, "filled_qty", None)
+    avg = getattr(fresh, "filled_avg_price", None)
+    legs = getattr(fresh, "legs", None)
+    leg_desc = ""
+    if legs:
+        leg_desc = ";".join(
+            f"{l.symbol} x{getattr(l, 'filled_qty', getattr(l, 'qty', '?'))} "
+            f"@{getattr(l, 'filled_avg_price', getattr(l, 'avg_price', '?'))}"
+            for l in legs
+        )
+    status_str = str(status)
+    if status_str.startswith("OrderStatus."):
+        status_str = status_str[len("OrderStatus."):]
+    detail = f"order_id={order.id} action={action} status={status_str} filled_qty={qty} avg={avg}"
+    if leg_desc:
+        detail += f" legs=[{leg_desc}]"
+    log_entry(status_str.upper(), detail)
+
+
+def reconcile_executions(tclient):
+    """Record every open option position that is not yet present in order_log.csv."""
+    import re
+    positions = current_options_positions(tclient)
+    if not positions:
+        return
+    known = set()
+    if os.path.exists(LOG_FILES["order_log"]):
+        with open(LOG_FILES["order_log"]) as f:
+            for ln in f:
+                for m in re.finditer(r"SPY\d{15}", ln):
+                    known.add(m.group(0))
+    for p in positions:
+        sym = p.symbol
+        if sym in known:
+            continue
+        side = "SHORT" if float(p.qty) < 0 else "LONG"
+        qty = abs(float(p.qty))
+        avg = float(p.avg_entry_price)
+        log_entry("RECONCILE", f"side={side} symbol={sym} qty={qty} avg={avg}")
+        known.add(sym)
 
 
 # ---- position management -----------------------------------------------------
@@ -346,6 +402,7 @@ def run_tick(tclient, sclient, oc, confirm=True, daily_pnl_tracker=None):
     market_open = clock.is_open
 
     opts_positions = current_options_positions(tclient)
+    reconcile_executions(tclient)
     open_orders = tclient.get_orders()
 
     # daily loss circuit

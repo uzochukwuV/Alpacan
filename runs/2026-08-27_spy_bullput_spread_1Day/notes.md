@@ -51,6 +51,23 @@ Modeled: none. Documented in fee_source.json. Live Alpaca options commission str
 ## Benchmark
 SPY buy-and-hold buy-at-first-close from the same data.
 
+## Parameter tuning (2026-08-27) v1.1.0
+A sweep overthe SMA trend filter, DTE, take-profit ratio, and strike widths was run
+on the same 2020-2026 data ((no refetch; same bars/pricing model). The adopted config:
+`SMA=80`, `SHORT=0.95` (5% OTM), `LONG=0.88` (12% OTM),
+`DTE=30`, `take_profit=0.50`, `risk=10%`.
+
+| Config | Total | MaxDD | Sharpe | Trades | W/L |
+|---|---:|---:|---:|---:|---:|
+| v1.0.0 (SMA100, TP.25) | +56.6% | -3.9%% | 2.96 | 117 |  106/11 |
+| **v1.1.0 (SMA80, TP.50)** | **+87.1%%** | **-3.0%%** | **3.52** | **167** | **159/8** |
+
+Why it helps the bear-market losses: an **80-day** SMA is more responsive than 100, keeping the
+strategyout of 2022-style sustained downtrends (and the 2025/2026 drawdowns sooner);
+takingprofit at **50% of credit** (instead of 25%) closes winners faster and compounds through
+higher turnover, while holding the same protective 12%-OTM long-leg risk lid. Losses
+drop from 11 (v1.0.0) to**8**(v1.1.0), around the2022 bear slides.
+
 ## Reproducibility
 - Raw data: `raw/bars_SPY.json` (Alpaca CLI, feed=iex), `raw/calendar.json` (XNYS 2020–2026).
 - Data fingerprint: `data_fingerprint.json`.

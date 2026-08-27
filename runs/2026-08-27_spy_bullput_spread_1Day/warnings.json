@@ -1,9 +1,9 @@
 [
-  "2022-01-20: underlying 451.83 < short strike 453; forced close.",
-  "2022-02-23: underlying 429.58 < short strike 434; forced close.",
-  "2022-08-31: underlying 398.17 < short strike 399; forced close.",
-  "2022-09-19: underlying 385.58 < short strike 386; forced close.",
-  "2022-12-20: underlying 380.00 < short strike 382; forced close.",
-  "2025-03-05: underlying 576.88 < short strike 582; forced close.",
+  "2022-01-20: underlying 451.83 < short strike 452; forced close.",
+  "2022-04-25: underlying 426.05 < short strike 436; forced close.",
+  "2022-08-29: underlying 405.35 < short strike 408; forced close.",
+  "2022-12-19: underlying 383.35 < short strike 387; forced close.",
+  "2025-03-05: underlying 576.88 < short strike 581; forced close.",
+  "2026-03-23: underlying 648.48 < short strike 655; forced close.",
   "Position still open at end of window; marked at last close 769.60."
 ]
