@@ -151,6 +151,33 @@
         </div>
 
         <div class="card">
+            <h2>Bot Status</h2>
+            <div class="grid">
+                <div class="metric">
+                    <h3>Cycle #</h3>
+                    <p id="bot-tick">--</p>
+                </div>
+                <div class="metric">
+                    <h3>Last Action</h3>
+                    <p id="bot-action">--</p>
+                </div>
+                <div class="metric">
+                    <h3>Last Reason</h3>
+                    <p id="bot-reason" style="font-size:0.95em;">--</p>
+                </div>
+                <div class="metric">
+                    <h3>Poll Interval</h3>
+                    <p id="bot-poll">--</p>
+                </div>
+            </div>
+            <p id="bot-last-tick" style="font-size:0.8em;color:#666;margin-top:8px;">--</p>
+            <details style="margin-top:8px;">
+                <summary style="cursor:pointer;font-size:0.9em;">Tick details</summary>
+                <pre id="bot-details" style="background:#f8f8f8;padding:10px;border-radius:4px;font-size:0.8em;overflow-x:auto;">--</pre>
+            </details>
+        </div>
+
+        <div class="card">
             <h2>Open Position</h2>
             <div id="position-container">
                 <p id="no-position">No open positions</p>
@@ -323,6 +350,16 @@
             }
         }
 
+        function updateTicker(data) {
+            document.getElementById('bot-tick').textContent = data.tick || '0';
+            document.getElementById('bot-action').textContent = data.action || '--';
+            document.getElementById('bot-action').className = data.action === 'executed' ? 'status-ok' : 'status-error';
+            document.getElementById('bot-reason').textContent = data.reason || '--';
+            document.getElementById('bot-poll').textContent = (data.poll_seconds || 300) + 's';
+            document.getElementById('bot-last-tick').textContent = data.last_tick ? 'Last tick: ' + new Date(data.last_tick).toLocaleString() : '--';
+            document.getElementById('bot-details').textContent = JSON.stringify(data.details || {}, null, 2);
+        }
+
         function updateStrategy(data) {
             const s = data.params || data;
             document.getElementById('strategy-version').textContent = s.version;
@@ -333,17 +370,19 @@
 
         async function updateAll() {
             try {
-                let acctResp, posResp, execResp, logsResp, stateResp;
+                let acctResp, posResp, execResp, logsResp, stateResp, tickerResp;
                 acctResp = await fetchJSON('/api/account');
                 posResp = await fetchJSON('/api/position');
                 execResp = await fetchJSON('/api/executions?limit=20');
                 logsResp = await fetchJSON('/api/logs');
                 stateResp = await fetchJSON('/api/state');
+                tickerResp = await fetchJSON('/api/ticker');
                 updateAccount(acctResp);
                 updatePosition(posResp);
                 updateExecutions(execResp);
                 updateLogs(logsResp);
                 updateStrategy(stateResp);
+                updateTicker(tickerResp);
                 document.getElementById('last-update').textContent = new Date().toLocaleString();
             } catch (error) {
                 console.error('Failed to update dashboard:', error);

@@ -177,6 +177,32 @@ def api_executions(limit: int = 50):
     return {"executions": rows[:limit], "as_of": datetime.now(timezone.utc).isoformat()}
 
 
+@app.get("/api/ticker")
+def api_ticker():
+    """Live bot status: cycle count, last reason, last action."""
+    p = RUN_DIR / "strategy_ticker.json"
+    if not p.exists():
+        return {
+            "running": False,
+            "tick": 0,
+            "last_tick": None,
+            "reason": "no_ticks_yet",
+            "action": "idle",
+            "poll_seconds": 300,
+            "details": {},
+            "message": "Bot has not run any cycle yet (or this is a fresh serverless environment).",
+        }
+    try:
+        import json as _json
+        with p.open() as f:
+            d = _json.load(f)
+        d.setdefault("details", {})
+        d["running"] = True
+        return d
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"failed to read ticker: {e}")
+
+
 @app.get("/api/logs")
 def api_logs():
     out = {}

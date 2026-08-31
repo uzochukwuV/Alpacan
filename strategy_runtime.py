@@ -57,12 +57,47 @@ POLL_SECONDS = 300                 # runtime loop sleep
 RUN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run_data")
 os.makedirs(RUN_DIR, exist_ok=True)
 
+TICKER_FILE = os.path.join(RUN_DIR, "strategy_ticker.json")
+TICK_COUNTER_FILE = os.path.join(RUN_DIR, "tick_counter.txt")
+
 LOG_FILES = {
     "orders": os.path.join(RUN_DIR, "orders.json"),
     "order_log": os.path.join(RUN_DIR, "order_log.csv"),
     "notes": os.path.join(RUN_DIR, "notes.md"),
     "portfolio": os.path.join(RUN_DIR, "portfolio_summary.md"),
 }
+
+
+def next_tick_number():
+    """Atomically read & increment the tick counter, return the new value."""
+    n = 0
+    if os.path.exists(TICK_COUNTER_FILE):
+        try:
+            with open(TICK_COUNTER_FILE) as f:
+                n = int(f.read().strip() or "0")
+        except Exception:
+            n = 0
+    n += 1
+    with open(TICK_COUNTER_FILE, "w") as f:
+        f.write(str(n))
+    return n
+
+
+def write_ticker(tick_num, reason, action_taken=True, details=None):
+    import json
+    data = {
+        "tick": tick_num,
+        "last_tick": datetime.now(timezone.utc).isoformat(),
+        "reason": reason,
+        "action": "executed" if action_taken else "no_action",
+        "poll_seconds": POLL_SECONDS,
+        "details": details or {},
+    }
+    try:
+        with open(TICKER_FILE, "w") as f:
+            json.dump(data, f)
+    except Exception:
+        pass
 
 
 def log_entry(event, detail=""):
@@ -492,9 +527,17 @@ def run_tick(tclient, sclient, oc, confirm=True, daily_pnl_tracker=None):
                 return
             else:
                 print("No exit condition met yet.")
+                tick_n = next_tick_number()
+                write_ticker(tick_n, "exit_check_no_condition_met", False, {
+                    "short_strike": float(short_strike), "dte": dte, "spot": float(spot),
+                    "close_cost": float(close_cost) if 'close_cost' in locals() else None,
+                    "entry_credit": float(entry_credit) if 'entry_credit' in locals() else None,
+                })
                 return
     else:
         print("No open option positions.")
+        tick_n = next_tick_number()
+        write_ticker(tick_n, "market_open_no_position", False, {"market_open": True})
 
     # --- entry signal ---
     if market_open:
@@ -507,12 +550,15 @@ def run_tick(tclient, sclient, oc, confirm=True, daily_pnl_tracker=None):
         bull = last_close > sma
         print(f"SPY close={last_close:.2f} SMA100={sma:.2f} bull={bull}")
         if bull:
+            tick_n = next_tick_number()
             if open_orders:
                 print(f"{len(open_orders)} open orders; skipping entry this tick.")
+                write_ticker(tick_n, "bull_skipped_open_orders", False, {"open_orders": len(open_orders)})
                 return
             contract = select_contracts(oc, sclient, last_close)
             if contract is None:
                 print("No suitable spread found in chain.")
+                write_ticker(tick_n, "no_contract_found", False, {"dte_target": TARGET_DTE})
                 return
             width = contract["short_strike"] - contract["long_strike"]
             n = compute_contracts(equity, width, contract["net_credit"])
@@ -543,10 +589,21 @@ def run_tick(tclient, sclient, oc, confirm=True, daily_pnl_tracker=None):
                 state["last_signal_date"] = date.today().isoformat()
                 save_state(state)
                 append_notes(f"- Opened spread {contract['short_sym']}/{contract['long_sym']} x{n} @ DTE {contract['dte']}")
+                write_ticker(tick_n, "executed_open_spread", True, {
+                    "short": contract["short_sym"], "long": contract["long_sym"],
+                    "contracts": n, "dte": contract["dte"], "net_credit": contract["net_credit"],
+                    "order_id": str(order.id),
+                })
+            else:
+                write_ticker(tick_n, "submission_skipped", False, {"reason": "user declined or submit failed"})
         else:
             print("Not in bull regime; no entry.")
+            write_ticker(tick_n, "bear_regime_no_entry", False, {
+                "last_close": float(last_close), "sma80": float(sma), "spread": float(last_close - sma),
+            })
     else:
         print("Market closed; entry deferred.")
+        write_ticker(tick_n, "market_closed", False, {"next_open": str(getattr(tclient.get_clock(), "next_open", ""))})
 
 
 def cmd_check():
