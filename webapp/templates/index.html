@@ -318,13 +318,12 @@
 
         async function updateAll() {
             try {
-                const [acctResp, posResp, execResp, logsResp, stateResp] = await Promise.all([
-                    fetchJSON('/api/account'),
-                    fetchJSON('/api/position'),
-                    fetchJSON('/api/executions?limit=20'),
-                    fetchJSON('/api/logs'),
-                    fetchJSON('/api/state'),
-                ]);
+                let acctResp, posResp, execResp, logsResp, stateResp;
+                acctResp = await fetchJSON('/api/account');
+                posResp = await fetchJSON('/api/position');
+                execResp = await fetchJSON('/api/executions?limit=20');
+                logsResp = await fetchJSON('/api/logs');
+                stateResp = await fetchJSON('/api/state');
                 updateAccount(acctResp);
                 updatePosition(posResp);
                 updateExecutions(execResp);
@@ -333,6 +332,7 @@
                 document.getElementById('last-update').textContent = new Date().toLocaleString();
             } catch (error) {
                 console.error('Failed to update dashboard:', error);
+                document.getElementById('last-update').textContent = 'Update failed: ' + (error.message || error);
             }
         }
 
