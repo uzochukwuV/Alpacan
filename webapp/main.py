@@ -162,6 +162,17 @@ def api_executions(limit: int = 50):
             })
     except Exception:
         pass
+    # Fallback: read from local execution ledger when available
+    p = RUN_DIR / "order_log.csv"
+    if p.exists():
+        try:
+            lines = p.read_text().strip().splitlines()
+            for ln in reversed(lines[-30:]):
+                parts = ln.split(",")
+                if len(parts) >= 3 and parts[1] in ("SUBMIT", "RECONCILE", "FILL"):
+                    rows.append({"ts": parts[0], "event": parts[1], "detail": ",".join(parts[2:])})
+        except Exception:
+            pass
     rows.sort(key=lambda r: r["ts"], reverse=True)
     return {"executions": rows[:limit], "as_of": datetime.now(timezone.utc).isoformat()}
 
@@ -169,16 +180,24 @@ def api_executions(limit: int = 50):
 @app.get("/api/logs")
 def api_logs():
     out = {}
+    # Read local run logs if present (Vercel serverless has no persist, but repo has them)
     for name, fn in (("runtime", "runtime.log"), ("keeper", "runtime_keeper.log")):
         p = RUN_DIR / fn
         if p.exists():
             try:
                 lines = p.read_text().strip().splitlines()
-                out[name] = lines[-40:]
-            except Exception:
-                out[name] = []
+                out[name] = lines[-40:] if lines else ["(no lines)"]
+            except Exception as e:
+                out[name] = ["read error: %s" % e]
         else:
-            out[name] = []
+            out[name] = ["(no log file — serverless environment, run locally for full history)"]
+    # Also include current account summary from Alpaca
+    try:
+        tclient, _, _ = get_clients()
+        acct = tclient.get_account()
+        out["summary"] = ["equity=%s buying_power=%s cash=%s status=%s" % (acct.equity, acct.buying_power, acct.cash, acct.status)]
+    except Exception:
+        pass
     return {"logs": out}
 
 

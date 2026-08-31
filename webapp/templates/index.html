@@ -304,11 +304,22 @@
         function updateLogs(data) {
             const runtime = document.getElementById('runtime-log');
             const keeper = document.getElementById('keeper-log');
-            if (data.logs.runtime && data.logs.runtime.length) {
-                runtime.textContent = data.logs.runtime.join('\n');
+            const renderLines = (lines) => {
+                if (Array.isArray(lines) && lines.length) {
+                    return lines.join('\n');
+                }
+                return '(no log entries)';
+            };
+            if (data.logs.runtime) {
+                const extra = data.logs.summary ? ('\n\n' + data.logs.summary.join('\n')) : '';
+                runtime.textContent = renderLines(data.logs.runtime) + extra;
+            } else {
+                runtime.textContent = '(no log entries)';
             }
-            if (data.logs.keeper && data.logs.keeper.length) {
-                keeper.textContent = data.logs.keeper.join('\n');
+            if (data.logs.keeper) {
+                keeper.textContent = renderLines(data.logs.keeper);
+            } else {
+                keeper.textContent = '(no log entries)';
             }
         }
 
