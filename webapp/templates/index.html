@@ -241,7 +241,7 @@
         }
 
         function updateAccount(data) {
-            const acct = data.account;
+            const acct = data;
             document.getElementById('account-number').textContent = acct.account_number || '--';
             document.getElementById('account-equity').textContent = acct.equity ? `$${parseFloat(acct.equity).toFixed(2)}` : '--';
             document.getElementById('account-buying-power').textContent = acct.buying_power ? `$${parseFloat(acct.buying_power).toFixed(2)}` : '--';
@@ -254,7 +254,7 @@
         }
 
         function updatePosition(data) {
-            const pos = data.position;
+            const pos = data;
             const tbody = document.getElementById('position-tbody');
             const noPos = document.getElementById('no-position');
             const table = document.getElementById('position-table');
@@ -309,7 +309,7 @@
         }
 
         function updateStrategy(data) {
-            const s = data.state.params;
+            const s = data.params || data;
             document.getElementById('strategy-version').textContent = s.version;
             document.getElementById('strategy-sma').textContent = s.sma_window;
             document.getElementById('strategy-tp').textContent = s.take_profit_ratio;
